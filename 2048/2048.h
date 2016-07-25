@@ -29,5 +29,5 @@ private:
     int n;
     int empty;
     pair<int, int> old_pos;
-    vector<vector<int>> vec;
+    vector<vector<int> > vec;
 };
