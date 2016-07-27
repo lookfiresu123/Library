@@ -1,8 +1,8 @@
 CXX = clang++
-CXXFLAGS=-g -std=c++11 -Wall -fstandalone-debug
+CXXFLAGS = -std=c++11 -g -Wall -fstandalone-debug -pedantic
 EXEC = test
-SOURCE = 2048.cpp
-OBJECT = 2048.o
+SOURCE = test.cpp
+OBJECT = test.o
 
 LDFLAG = -lcurses
 
