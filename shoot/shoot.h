@@ -3,10 +3,13 @@
 
 #include <iostream>
 #include <GL/glut.h>
+#include <cmath>
 
 using std::cin;
 using std::cout;
 using std::endl;
+
+#define PI 3.1415926
 
 // 三维空间中的点
 typedef struct Vector3f {
@@ -23,6 +26,27 @@ typedef struct Camera {
     Camera() : maxTilt(85) {}   // 构造函数
 } Camera;
 
+// 时间结构
+typedef struct Time {
+    float last;
+    float current;
+    float delta;
+    Time() : last(0), current(0), delta(0) {}
+} TIme;
+
+class Math {
+public:
+    static double degressToRadians(double degress) {
+        return degress * PI / 180;
+    }
+    static double dsin(double theta) {
+        return sin(degressToRadians(theta));
+    }
+    static double dcos(double theta) {
+        return cos(degressToRadians(theta));
+    }
+};
+
 // 视窗类，负责刷新整个视图
 class Viewport {
 public:
@@ -33,12 +57,48 @@ public:
     static void reshape(int w, int h);  // 配置窗口可调整
     static void display();              // 负责显示
     static void setGrabbed(bool value); // 设置鼠标指针是否显示
+    static void processEvents();        // 处理事件
 private:
     static Camera camera;               // 相机的基本属性
+    static Time time;                   // 时间标尺
 };
 
 
 // 鼠标类，负责响应鼠标活动
+class Mouse {
+public:
+    // 纪录当前鼠标位置
+    static int currentX;
+    static int currentY;
+
+    // 纪录鼠标的上一次位置
+    static int lastX;
+    static int lastY;
+
+    // 纪录鼠标移动的变化量
+    static int deltaX;
+    static int deltaY;
+
+    // 纪录鼠标移动的灵敏度
+    static float sensitivity;
+
+    // 鼠标的三个按键
+    static bool leftButton;
+    static bool middleButton;
+    static bool rightButton;
+
+    static void move(int x, int y);                         // 鼠标移动方法
+    static void update();                                   // 更新鼠标的相关事件信息
+    static void click(int button, int state, int x, int y); // 鼠标点击方法
+};
+
+
 // 键盘类，负责响应键盘活动
+class KeyBoard {
+public:
+    static bool key[256];
+    static void keyDown(unsigned char k, int x, int y);     // 按键
+    static void keyUp(unsigned char k, int x, int y);       // 抬键
+};
 
 #endif
