@@ -46,8 +46,10 @@ WorkQueue::~WorkQueue() {
 
 Task *WorkQueue::getNextTask() {
     Task *t = nullptr;
+    // 由于同一时间只能有一个线程访问任务队列，因此线程访问队列前需要先加锁
     pthread_mutex_lock(&qmtx);
     if (!finished) {
+        // 利用条件变量使线程只有在队列不为空时才进入临界区，否则睡眠
         while (tasks.empty()) pthread_cond_wait(&wcond, &qmtx);
         // 当队列不为空时，取出第一个任务并执行
         t = tasks.front();
@@ -56,7 +58,7 @@ Task *WorkQueue::getNextTask() {
             // t->showTask();
         }
     }
-    pthread_mutex_unlock(&qmtx);
+    pthread_mutex_unlock(&qmtx);    // 解互斥锁
     return t;
 }
 
