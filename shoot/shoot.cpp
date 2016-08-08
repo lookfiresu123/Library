@@ -22,6 +22,50 @@ bool Mouse::rightButton = false;
 // 键盘类
 bool KeyBoard::key[256];
 
+// 绘制一个立方体
+void addCube() {
+    //  第一个面
+    glBegin(GL_QUADS);
+    glColor3f(1, 0, 0);
+    glVertex3f(1, 0, -5);
+    glVertex3f(1, 1, -5);
+    glVertex3f(0, 1, -5);
+    glVertex3f(0, 0, -5);
+    glEnd();
+    //  第二个面
+    glBegin(GL_QUADS);
+    glColor3f(0, 1, 0);
+    glVertex3f(1, 0, -5);
+    glVertex3f(1, 1, -5);
+    glVertex3f(1, 1, -6);
+    glVertex3f(1, 0, -6);
+    glEnd();
+    // 第三个面
+    glBegin(GL_QUADS);
+    glColor3f(0, 0, 1);
+    glVertex3f(1, 0, -6);
+    glVertex3f(1, 1, -6);
+    glVertex3f(0, 1, -6);
+    glVertex3f(0, 0, -6);
+    glEnd();
+    // 第四个面
+    glBegin(GL_QUADS);
+    glColor3f(1, 0, 1);
+    glVertex3f(0, 1, -6);
+    glVertex3f(0, 0, -6);
+    glVertex3f(0, 0, -5);
+    glVertex3f(0, 1, -5);
+    glEnd();
+    // 第五个面
+    glBegin(GL_QUADS);
+    glColor3f(1, 1, 0);
+    glVertex3f(0, 1, -6);
+    glVertex3f(1, 1, -6);
+    glVertex3f(1, 1, -5);
+    glVertex3f(0, 1, -5);
+    glEnd();
+}
+
 // 视窗类
 void Viewport::init() {
     // 设置GLUT的回调函数
@@ -41,6 +85,9 @@ void Viewport::init() {
     glEnable(GL_DEPTH_TEST);        // 启用深度测试，根据坐标的远近自动隐藏被遮住的图形
     glEnable(GL_TEXTURE_2D);        // 启用二维文理
     grabbed ? Viewport::setGrabbed(true) : Viewport::setGrabbed(false); // 配置鼠标是否直接被OPENGL全局捕获并显示
+
+    camera.position.y = 1.75;
+    Resources::load();
 }
 
 void Viewport::setGrabbed(bool value) {
@@ -85,7 +132,27 @@ void Viewport::display() {
         glVertex3f(1, 0, -3);
     glEnd();
 
-    glBindTexture(GL_TEXTURE_2D, 0);    // 绑定材质
+    addCube();	// 绘制一个立方体
+
+    // Resources::load();
+    glBindTexture(GL_TEXTURE_2D, Resources::tex->textureID);    // 绑定材质
+    glBegin(GL_QUADS);
+    glColor3f(1, 1, 1);
+
+    glTexCoord2f(100, 100);
+    glVertex3f(100, 0, 100);
+
+    glTexCoord2f(100, -100);
+    glVertex3f(-100, 0, 100);
+
+    glTexCoord2f(-100, -100);
+    glVertex3f(-100, 0, -100);
+
+    glTexCoord2f(-100, 100);
+    glVertex3f(100, 0, -100);
+
+    glEnd();
+    glBindTexture(GL_TEXTURE_2D, 0);    // 结束绑定
     glutSwapBuffers();                  // 双缓冲显示模式
 }
 
@@ -181,4 +248,88 @@ void KeyBoard::keyDown(unsigned char k, int x, int y) {
 
 void KeyBoard::keyUp(unsigned char k, int x, int y) {
     key[k] = false;
+}
+
+// 材质类
+Texture::Texture(void *data, int w, int h, int format) {
+    glGenTextures(1, &textureID);               // 用来生成纹理
+    glBindTexture(GL_TEXTURE_2D, textureID);    // 绑定材质
+    // 生成一个2D纹理
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, format, GL_UNSIGNED_BYTE, data);
+
+    // 过滤纹理
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+    glBindTexture(GL_TEXTURE_2D, 0);    // 结束绑定
+    // 将数据、宽高、格式初始化到Texture类
+    this->data = data;
+    this->w = w;
+    this->h = h;
+    this->format = format;
+}
+
+Texture *Texture::loadBMP(const char *filename) {
+    FILE *fp;       // 定义文件指针
+    fp = fopen(filename, "r");  // 读取文件
+    // 如果读取失败，则返回空指针，并关闭文件读取
+    if (!fp) {
+        cout << filename << " could not be opened!"<< endl;
+        fclose(fp);
+        return nullptr;
+    }
+
+    char headerField[3];
+    fread(headerField, 2, sizeof(char), fp);    // 读取两个字节的内容
+    if (strcmp(headerField, "BM")) {
+        cout << "File is not a bitmap" << endl;
+        fclose(fp);
+        return nullptr;
+    }
+
+    unsigned int bmpDataLocation;   // 图像数据的位置
+    unsigned int bmpWidth;          // 图像的宽
+    unsigned int bmpHeight;         // 图像的高
+    unsigned short numColorPlanes;  // 图像的颜色版
+    unsigned short bitsPerPixel;    // 图像的像素
+    unsigned int compressionMethod; // 图像的压缩方法
+    unsigned int bmpDataSize;       // 图像的数据大小
+
+    // 从0x000a开始，读取一个字节来获取图像的数据位置
+    fseek(fp, 0x000a, SEEK_SET);
+    fread(&bmpDataLocation, 1, sizeof(unsigned int), fp);
+
+    // 从0x0012开始，依次读取一个字节来获取文件的基本信息
+    fseek(fp, 0x0012, SEEK_SET);
+    fread(&bmpWidth, 1, sizeof(unsigned int), fp);
+    fread(&bmpHeight, 1, sizeof(unsigned int), fp);
+    fread(&numColorPlanes, 1, sizeof(unsigned short), fp);
+    fread(&bitsPerPixel, 1, sizeof(unsigned short), fp);
+    fread(&compressionMethod, 1, sizeof(unsigned int), fp);
+    fread(&bmpDataSize, 1, sizeof(unsigned int), fp);
+
+    // 处理不符合格式的图像，并关闭退出
+    if (numColorPlanes != 1 || bitsPerPixel != 24 || compressionMethod != 0) {
+        cout << "File is not raw BMP24" << endl;
+        fclose(fp);
+        return nullptr;
+    }
+
+    unsigned char *bmpData = new unsigned char[bmpDataSize];    // 准备图像数据指针
+    // 从图像数据位置处开始读取图像数据
+    fseek(fp, bmpDataLocation, SEEK_SET);
+    fread(bmpData, bmpDataSize, sizeof(unsigned char), fp);
+    fclose(fp);
+
+    // 读取完成后，创建一个Texture对象并返回
+    return new Texture(bmpData, bmpWidth, bmpHeight, GL_BGR);
+}
+
+// 资源类
+Texture *Resources::tex = nullptr;
+
+void Resources::load() {
+    tex = Texture::loadBMP("map.bmp");
 }

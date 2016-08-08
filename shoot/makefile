@@ -9,4 +9,4 @@ all:
 	$(CXX) $(SOURCE) $(CXXFLAGS) $(LDFLAGS) -o $(EXEC)
 
 clean:
-	rm -f -$(EXEC) *.gdb *.o
+	rm -f $(EXEC) *.gdb *.o

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <GL/glut.h>
 #include <cmath>
+#include <cstring>
 
 using std::cin;
 using std::cout;
@@ -99,6 +100,26 @@ public:
     static bool key[256];
     static void keyDown(unsigned char k, int x, int y);     // 按键
     static void keyUp(unsigned char k, int x, int y);       // 抬键
+};
+
+// 材质类
+class Texture {
+public:
+    unsigned int textureID; // 给出加载材质的ID
+    void *data;             // 存储材质数据
+    int w;                  // 材质的宽度
+    int h;                  // 材质的高度
+    unsigned char format;   // 材质的格式
+    Texture(void *data, int w, int h, int format);  // 材质的构造方法
+    static Texture *loadBMP(const char *filename);  // 从BMP图形中加载材质
+};
+
+// 资源类，在Viewport加载前加载
+class Resources {
+public:
+    static Texture *tex;    // 材质指针
+    static void load();     // 加载材质
+    static void regen();    // 重新加载
 };
 
 #endif
