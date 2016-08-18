@@ -148,16 +148,21 @@ private:
 // 银行队列系统的模拟
 class QueueSystem {
 public:
-    QueueSystem(int total_service_time_, int window_num_);
+    QueueSystem(int total_service_time_, int window_num_);  // 初始化队列系统
+    ~QueueSystem();                                         // 销毁队列系统
+    void simulate(int simulate_num);                        // 启动模拟
+    double getAvgStayTime();                                // 获取每个客户的平均滞留时间
+    double getAvgCustomers();                               // 获取每个窗口每分钟的平均客户数
 private:
-    double run();               // 让队列系统运行一次
-    void init();                // 初始化各种参数
-    void end();                 // 清空各种参数
+    double run();               // 系统开始运行，不断消耗事件表，当消耗完成时结束运行
+    void init();                // 系统开启运行，初始化事件链表， 部署第一个事件
+    void end();                 // 系统运行结束，将所有服务窗口置空闲，并清空用户的等待队列和事件列表
     int getIdleServiceWindow(); // 获得空闲窗口索引
     void customerArrived();     // 处理客户到达事件
+    void customerDeparture();   // 处理客户的离开事件
     int window_num;             // 服务窗口的总数
     int total_service_time;     // 总的营业时间
-    int customer_stay_time;     // 客户逗留总时间
+    int total_customer_stay_time;     // 客户逗留总时间
     int total_customer_num;     // 客户总数
 
     // 核心成员
@@ -167,8 +172,9 @@ private:
     Event*              current_event;  // 当前事件
 
     // 给外部调用的结果
-    double avg_customers;
-    double avg_stay_time;
+    double avg_customers;               // 每个窗口每分钟的平均客户数
+    double avg_stay_time;               // 每个客户的平均滞留时间
+
 };
 
 #endif
